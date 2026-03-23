@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JARVIS | System Diagnostics</title>
+    <link rel="icon" type="image/x-icon" href="https://www.google.com/favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -103,7 +104,6 @@
             align-items: center;
         }
 
-        /* Left Side: System Info */
         .system-info {
             flex: 1;
             padding: 25px;
@@ -121,7 +121,6 @@
         .info-label { font-size: 12px; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; }
         .info-value { font-size: 22px; font-family: 'Orbitron'; }
 
-        /* Right Side: Graphs */
         .visuals {
             flex: 1;
             display: flex;
@@ -137,7 +136,6 @@
             overflow: hidden;
         }
 
-        /* Simulated Animated Wave/Graph */
         .wave {
             position: absolute;
             bottom: 0;
@@ -153,7 +151,6 @@
             to { height: 60%; }
         }
 
-        /* --- CENTER INSTRUCTION --- */
         .call-to-action {
             position: absolute;
             top: 50%;
@@ -174,7 +171,6 @@
 
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
 
-        /* --- DOCK --- */
         .dock {
             align-self: center;
             margin-bottom: 30px;
@@ -198,6 +194,7 @@
             background: rgba(255,255,255,0.05);
             border-radius: 10px;
             transition: 0.3s cubic-bezier(0.47, 0, 0.745, 0.715);
+            cursor: pointer;
         }
 
         .dock-icon:hover {
@@ -265,10 +262,10 @@
     </main>
 
     <footer class="dock">
-        <div class="dock-icon">📁</div>
-        <div class="dock-icon">🌐</div>
-        <div class="dock-icon">🛡️</div>
-        <div class="dock-icon" style="background: rgba(0, 242, 255, 0.2);">⚙️</div>
+        <div class="dock-icon" onclick="openSite('google')">📁</div>
+        <div class="dock-icon" onclick="openSite('github')">🌐</div>
+        <div class="dock-icon" onclick="openSite('youtube')">🛡️</div>
+        <div class="dock-icon" style="background: rgba(0, 242, 255, 0.2);" onclick="openSite('openai')">⚙️</div>
     </footer>
 
     <script>
@@ -287,6 +284,17 @@
         // App Redirect
         function goToApp() {
             window.location.href = "app.html";
+        }
+
+        // Dock Redirect Logic
+        function openSite(platform) {
+            const urls = {
+                'google': 'https://www.github.com',
+                'github': 'https://www.google.com',
+                'youtube': 'https://www.avastativirus.com',
+                'openai': 'https://www.openai.com'
+            };
+            window.open(urls[platform], '_blank'); // Opens in new tab
         }
     </script>
 </body>
