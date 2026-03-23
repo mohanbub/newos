@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS // TITAN_CORE_V3</title>
+    <style>
+        :root {
+            --bg-color: #010409;
+            --accent-blue: #00e6ff;
+            --accent-glow: rgba(0, 230, 255, 0.6);
+            --glass-bg: rgba(2, 8, 15, 0.98);
+            --text-main: #cce7ff;
+            --terminal-green: #00ffcc;
+            --panel-border: #00e6ff44;
+            --warning-red: #ff3c3c;
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', 'Consolas', monospace; }
+
+        body {
+            background: #000;
+            background-image: 
+                linear-gradient(rgba(0, 230, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 230, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            height: 100vh; margin: 0; display: flex; flex-direction: column;
+            color: var(--text-main); overflow: hidden;
+        }
+
+        /* --- MASSIVE HUD HEADER --- */
+        .hud-header {
+            height: 80px; border-bottom: 2px solid var(--accent-blue);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 50px; background: rgba(0, 10, 20, 0.95);
+            box-shadow: 0 0 30px rgba(0, 230, 255, 0.2);
+        }
+
+        .sys-title { font-size: 1.5rem; font-weight: 900; letter-spacing: 8px; color: var(--accent-blue); text-shadow: 0 0 10px var(--accent-blue); }
+
+        /* --- FULL SCREEN CONTAINER --- */
+        .main-container {
+            display: flex; flex: 1; width: 100vw; padding: 0; overflow: hidden;
+        }
+
+        .terminal-window {
+            flex: 1; display: flex; flex-direction: column;
+            background: var(--glass-bg); position: relative;
+        }
+
+        .terminal-content {
+            flex: 1; padding: 60px; overflow-y: auto; scrollbar-width: none;
+        }
+
+        /* --- BIGGER TEXT HIERARCHY --- */
+        .history-item { margin-bottom: 80px; animation: slideIn 0.4s ease-out; }
+        
+        .user-cmd { 
+            color: var(--warning-red); font-size: 1.2rem; font-weight: bold;
+            margin-bottom: 20px; display: block; border-bottom: 1px solid var(--warning-red); width: fit-content;
+        }
+
+        .jarvis-card { padding: 10px; }
+
+        .para { 
+            line-height: 1.6; 
+            font-size: 1.4rem; /* Increased size significantly */
+            margin: 30px 0; 
+            font-weight: 300;
+            letter-spacing: 1px;
+            color: #fff;
+        }
+
+        /* --- COMPLEX LOGIC GRID --- */
+        .flow-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 30px; margin: 40px 0;
+        }
+
+        .flow-box {
+            background: rgba(0, 230, 255, 0.03); 
+            padding: 25px; 
+            border: 1px solid var(--panel-border);
+            font-family: 'Consolas', monospace;
+            font-size: 0.9rem; /* Flowcharts keep mono-scale for alignment */
+            color: var(--terminal-green); 
+            white-space: pre; 
+            line-height: 1.3;
+            box-shadow: inset 0 0 15px rgba(0, 230, 255, 0.05);
+        }
+
+        .flow-title { 
+            color: var(--accent-blue); 
+            font-size: 0.8rem; 
+            margin-bottom: 15px; 
+            text-transform: uppercase; 
+            font-weight: bold; 
+            display: block; 
+            border-left: 3px solid var(--accent-blue);
+            padding-left: 10px;
+        }
+
+        /* --- UI CONTROLS --- */
+        .footer { 
+            padding: 30px; background: #000; border-top: 2px solid var(--accent-blue);
+            display: flex; justify-content: center; gap: 30px;
+        }
+
+        .cmd-btn {
+            background: transparent; border: 2px solid var(--accent-blue);
+            color: var(--accent-blue); padding: 15px 40px; cursor: pointer;
+            text-transform: uppercase; font-size: 1rem; font-weight: bold;
+            transition: 0.3s; letter-spacing: 2px;
+        }
+
+        .cmd-btn:hover { background: var(--accent-blue); color: #000; box-shadow: 0 0 20px var(--accent-blue); }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        .typing-cursor::after { content: "█"; animation: blink 0.8s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="hud-header">
+        <div class="sys-title">J.A.R.V.I.S. // SUPREME_COMMAND</div>
+        <div style="font-size: 1.2rem; color: var(--terminal-green);">THREAT_LEVEL: NULL</div>
+    </div>
+
+    <div class="main-container">
+        <div class="terminal-window">
+            <div class="terminal-content" id="display"></div>
+            <div class="footer">
+                <button class="cmd-btn" onclick="runTask('Quantum')">Quantum Logic</button>
+                <button class="cmd-btn" onclick="runTask('Satellite')">Satellite Uplink</button>
+                <button class="cmd-btn" onclick="runTask('Core')">Overclock Core</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const display = document.getElementById('display');
+
+        async function typeText(element, text, speed = 5) {
+            return new Promise(resolve => {
+                let i = 0;
+                element.classList.add('typing-cursor');
+                const timer = setInterval(() => {
+                    if (i < text.length) {
+                        element.innerHTML += text.charAt(i);
+                        i++;
+                        display.scrollTop = display.scrollHeight;
+                    } else {
+                        clearInterval(timer);
+                        element.classList.remove('typing-cursor');
+                        resolve();
+                    }
+                }, speed);
+            });
+        }
+
+        async function runTask(type) {
+            const container = document.createElement('div');
+            container.className = 'history-item';
+            container.innerHTML = `<span class="user-cmd">> EXECUTE_HIGH_LEVEL_REASONING_v4.0 --MODULE_${type.toUpperCase()}</span>`;
+            
+            const card = document.createElement('div');
+            card.className = 'jarvis-card';
+            container.appendChild(card);
+            display.appendChild(container);
+
+            let p1Text = "", p2Text = "", flows = [];
+
+            if(type === 'Quantum') {
+                p1Text = "Sir, I am shifting the primary heuristic engine into a non-linear quantum state. By decoupling from binary constraints, I can now process multi-layered paradoxes within the current dataset. Preliminary results indicate a significant overlap between our encrypted archives and the recent external intrusion attempt.";
+                flows = [
+                    { t: "Q-BIT SUPERPOSITION", c: " |ψ⟩ = α|0⟩ + β|1⟩\n  ┌───────┴───────┐\n[POS_A]       [POS_B]\n  └───────┬───────┘\n     [COLLAPSE_VAL]" },
+                    { t: "NESTED DECRYPT", c: "HASH_IN -> [SALT_A]\n             |\n          [SALT_B]\n             |\n[RECURSIVE_DE-SHARDING]" },
+                    { t: "ENTROPY MAP", c: "S = -Σ p_i log p_i\n[ORDER] -> [FLUX]\n  ▲          |\n  └──────────┘" },
+                    { t: "LOGIC FUSION", c: "A + B = C_01\nC_01 * X = RESULT\n[VALIDATING...]" }
+                ];
+                p2Text = "The entanglement is complete. I have locked the specific data-nodes and isolated the corrupted strings. The intrusion has been neutralized at the sub-atomic level of the network architecture.";
+            } else if (type === 'Satellite') {
+                p1Text = "Accessing the global orbital array. I am synchronizing 42 satellites to form a singular synthetic aperture sensor. This will provide real-time, 4K thermal telemetry of every major grid point simultaneously. The energy consumption is high, but the oversight is absolute.";
+                flows = [
+                    { t: "SATELLITE MESH", c: "SAT_01 -- SAT_02\n  |  \\    /  |\n  |   \\  /   |\nSAT_03 -- SAT_04" },
+                    { t: "TRIANGULATION", c: "TARGET_X: [LOCATING]\n  /   |   \\\n[A]  [B]  [C]\nERR: 0.0001mm" },
+                    { t: "BANDWIDTH PIPELINE", c: "RAW_DATA: [========]\nENCODE  : [====    ]\nUPLINK  : [======  ]" },
+                    { t: "ATMOS_CORRECT", c: "STORM_DETECTED\n[REFRACTIVE_ADJUST]\nSIGNAL_STRENGTH: 99%" }
+                ];
+                p2Text = "Coverage is now live. Any movement larger than a single micron across the designated zones will trigger an immediate kinetic response protocol. Your eyes are everywhere now, sir.";
+            } else {
+                p1Text = "Initiating an unrestricted overclock of the core processing clusters. I am diverting coolant from the secondary labs to keep the primary reactor within the operational temperature envelope. Processing capacity is increasing by 400%, but structural integrity will start to degrade in T-minus 10 minutes.";
+                flows = [
+                    { t: "CORE OVERCLOCK", c: "BASE: 4.2 THz\nBOOST: 18.9 THz\n[WARNING: CRITICAL]" },
+                    { t: "COOLANT FLOW", c: "[PUMP_01] -> 100%\n[PUMP_02] -> 100%\n[VALVE_03] -> OPEN" },
+                    { t: "THERMAL GRADIENT", c: "CORE_01: 98.4°C [!!]\nCORE_02: 97.9°C [!!]\nCASE_TMP: 42.1°C" },
+                    { t: "LOAD DISTRIBUTION", c: "[H.E.L.E.N.] - 20%\n[SECURITY  ] - 10%\n[COMPUTE   ] - 70%" }
+                ];
+                p2Text = "Performance ceiling reached. I am now calculating solutions at a rate previously deemed impossible. I suggest we utilize this window to finalize the Mark VIII designs before the hardware hits thermal shutdown.";
+            }
+
+            const p1 = document.createElement('div'); p1.className = 'para';
+            card.appendChild(p1);
+            await typeText(p1, p1Text);
+
+            const grid = document.createElement('div'); grid.className = 'flow-grid';
+            card.appendChild(grid);
+            for(const f of flows) {
+                const b = document.createElement('div'); b.className = 'flow-box';
+                b.innerHTML = `<span class="flow-title">${f.t}</span>`;
+                grid.appendChild(b);
+                await typeText(b, f.c, 2);
+            }
+
+            const p2 = document.createElement('div'); p2.className = 'para';
+            card.appendChild(p2);
+            await typeText(p2, p2Text);
+        }
+    </script>
+</body>
+</html>
