@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS | Neural Interface</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #00f2ff;
+            --accent-dim: #005663;
+            --bg: #02050a;
+            --glass: rgba(0, 242, 255, 0.05);
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 50% 50%, #102a43 0%, #02050a 100%),
+                linear-gradient(rgba(0, 242, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 242, 255, 0.05) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+            color: white;
+            font-family: 'Rajdhani', sans-serif;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .core-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
+        }
+
+        .ring {
+            position: absolute;
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            opacity: 0.3;
+            box-shadow: 0 0 15px var(--accent-dim);
+        }
+
+        .ring-1 { width: 280px; height: 280px; border-style: dashed; animation: rotate 10s linear infinite; }
+        .ring-2 { width: 220px; height: 220px; border-width: 4px; border-top-color: transparent; animation: rotate 5s linear infinite reverse; }
+        
+        .core {
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+            border-radius: 50%;
+            box-shadow: 0 0 50px var(--accent);
+            z-index: 2;
+            transition: 0.5s;
+        }
+
+        .active .core {
+            animation: pulse 1.5s infinite;
+            background: radial-gradient(circle, #fff 0%, var(--accent) 70%);
+        }
+
+        #status-panel {
+            margin-top: 20px;
+            text-align: center;
+            z-index: 5;
+        }
+
+        .status-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            letter-spacing: 3px;
+            color: var(--accent);
+            text-shadow: 0 0 10px var(--accent);
+            text-transform: uppercase;
+        }
+
+        #chat-log {
+            margin-top: 15px;
+            width: 80vw;
+            max-width: 800px;
+            height: 120px;
+            overflow-y: auto;
+            font-size: 18px;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+        }
+
+        .input-container {
+            position: fixed;
+            bottom: 40px;
+            width: 60%;
+            max-width: 600px;
+            display: flex;
+            gap: 10px;
+            background: rgba(0, 242, 255, 0.05);
+            padding: 10px 20px;
+            border: 1px solid var(--accent-dim);
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+        }
+
+        #user-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--accent);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 16px;
+            outline: none;
+        }
+
+        #send-btn {
+            background: transparent;
+            border: none;
+            color: var(--accent);
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+        }
+
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
+    </style>
+</head>
+<body>
+
+    <div class="core-container" id="mainCore">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="core"></div>
+    </div>
+
+    <div id="status-panel">
+        <div class="status-text" id="status">Neural Link Offline</div>
+        <div id="chat-log">INITIALIZE SYSTEM BY CLICKING CORE</div>
+    </div>
+
+    <div class="input-container">
+        <input type="text" id="user-input" placeholder="Manual command..." autocomplete="off">
+        <button id="send-btn">SEND</button>
+    </div>
+
+    <script>
+        const statusEl = document.getElementById('status');
+        const logEl = document.getElementById('chat-log');
+        const coreCont = document.getElementById('mainCore');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        // --- CONFIGURATION ---
+        const WAKE_WORD = "jarvis";
+        const API_KEY = "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"; // Replace this!
+
+        // --- SPEECH SETUP ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        let isSystemActive = false;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
+                logEl.innerText = "Heard: " + transcript;
+
+                if (transcript.includes(WAKE_WORD)) {
+                    const command = transcript.split(WAKE_WORD).pop().trim();
+                    if (command) getAIResponse(command);
+                }
+            };
+
+            recognition.onend = () => {
+                if (isSystemActive) recognition.start();
+            };
+        }
+
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            const voices = window.speechSynthesis.getVoices();
+            // Try to find a cool male voice
+            utterance.voice = voices.find(v => v.name.includes('Google UK English Male')) || voices[0];
+            utterance.rate = 1.0;
+            utterance.pitch = 0.8;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        async function getAIResponse(prompt) {
+            if (!API_KEY || API_KEY.includes("YOUR_")) {
+                logEl.innerText = "ERROR: Missing API Key in code.";
+                return;
+            }
+
+            coreCont.classList.add('active');
+            statusEl.innerText = "THINKING...";
+
+            try {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-3.5-turbo",
+                        messages: [
+                            {role: "system", content: "You are JARVIS. Be concise, witty, and helpful. Call the user Sir."},
+                            {role: "user", content: prompt}
+                        ]
+                    })
+                });
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
+
+                const reply = data.choices[0].message.content;
+                logEl.innerText = "JARVIS: " + reply;
+                speak(reply);
+            } catch (e) {
+                console.error(e);
+                logEl.innerText = "CONNECTION ERROR: " + e.message;
+            } finally {
+                coreCont.classList.remove('active');
+                statusEl.innerText = "LISTENING...";
+            }
+        }
+
+        // --- INTERACTION ---
+        function initSystem() {
+            if (isSystemActive) return;
+            isSystemActive = true;
+            
+            if(recognition) recognition.start();
+            statusEl.innerText = "ONLINE / LISTENING";
+            logEl.innerText = "Welcome back, Sir.";
+            speak("Neural link established. System ready, Sir.");
+        }
+
+        document.body.addEventListener('click', () => {
+            initSystem();
+        }, { once: true });
+
+        sendBtn.onclick = () => {
+            if(userInput.value.trim()) {
+                getAIResponse(userInput.value);
+                userInput.value = "";
+            }
+        };
+
+        userInput.onkeypress = (e) => { if(e.key === "Enter") sendBtn.click(); };
+
+    </script>
+</body>
+</html>
